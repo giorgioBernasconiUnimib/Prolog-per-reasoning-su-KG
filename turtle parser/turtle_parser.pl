@@ -39,12 +39,62 @@ rec_parse([Line | Other]) :-
 
 rec_parse([Line | Other]) :-
     split_string(Line, " ", "", Splitted),
+    skip_str_split(Splitted, [Subj, Pred, Obj, ";"]), !,
+    string_to_atom(Subj, AtomSubj),
+    string_to_atom(Pred, AtomPred),
+    string_to_atom(Obj, AtomObj),
+    assert(triple(AtomSubj, AtomPred, AtomObj)),
+    handle_preds(Other, AtomSubj, Resto),
+    rec_parse(Resto).
+
+rec_parse([Line | Other]) :-
+    split_string(Line, " ", "", Splitted),
+    skip_str_split(Splitted, [Subj, Pred, Obj, "," | Linea]), !,
+    string_to_atom(Subj, AtomSubj),
+    string_to_atom(Pred, AtomPred),
+    string_to_atom(Obj, AtomObj),
+    assert(triple(AtomSubj, AtomPred, AtomObj)),
+    handle_obj(Linea, AtomSubj, AtomPred),
+    rec_parse(Other).
+
+rec_parse([Line | Other]) :-
+    split_string(Line, " ", "", Splitted),
     skip_str_split(Splitted, [Subj, Pred, Obj, "."]), !,
     string_to_atom(Subj, AtomSubj),
     string_to_atom(Pred, AtomPred),
     string_to_atom(Obj, AtomObj),
     assert(triple(AtomSubj, AtomPred, AtomObj)),
     rec_parse(Other).
+
+% predicato handle_preds/3, che si occupa di gestire i ;
+% nel file turtle.
+
+handle_preds([E | Others], AtomSubj, Others) :-
+    split_string(E, " ", "\t", Splitted),
+    skip_str_split(Splitted, [Pred, Obj, "."]), !,
+    string_to_atom(Pred, AtomPred),
+    string_to_atom(Obj, AtomObj),
+    assert(triple(AtomSubj, AtomPred, AtomObj)).
+
+handle_preds([E | Others], AtomSubj, Altri) :-
+    split_string(E, " ", "\t", Splitted),
+    skip_str_split(Splitted, [Pred, Obj, ";"]), !,
+    string_to_atom(Pred, AtomPred),
+    string_to_atom(Obj, AtomObj),
+    assert(triple(AtomSubj, AtomPred, AtomObj)),
+    handle_preds(Others, AtomSubj, Altri).
+
+% predicato handle_obj/3, che si occupa di gestire le ,
+% nel file turtle.
+
+handle_obj([Obj, "."], AtomSubj, AtomPred) :-
+    !, string_to_atom(Obj, AtomObj),
+    assert(triple(AtomSubj, AtomPred, AtomObj)).
+
+handle_obj([Obj, "," | Altri], AtomSubj, AtomPred) :-
+    !, string_to_atom(Obj, AtomObj),
+    assert(triple(AtomSubj, AtomPred, AtomObj)),
+    handle_obj(Altri, AtomSubj, AtomPred).
 
 % predicato read_file/2, che permette di leggere un
 % file il cui nome viene passato come argomento e successivamente
