@@ -11,7 +11,7 @@
 % istruzione per informare prolog che prefix verrà
 % creata solo dinamicamente durante l'esecuzione
 
-:- dynamic prefix/2.
+:- dynamic prefix_rdf/2.
 
 % predicato parse_ttl, che prende una stringa in input,
 % la splitta eliminando gli spazi e la passa all'analizzatore
@@ -34,7 +34,7 @@ rec_parse([Line | Other]) :-
     sub_string(Prefisso, 0, _, 1, Stri),
     string_to_atom(Stri, PrefAtom),
     string_to_atom(Significato, MeanAtom),
-    assert(prefix(PrefAtom, MeanAtom)),
+    assert(prefix_rdf(PrefAtom, MeanAtom)),
     rec_parse(Other).
 
 rec_parse([Line | Other]) :-
@@ -44,6 +44,9 @@ rec_parse([Line | Other]) :-
     sub_prefixes(Subj, AtomSubj),
     sub_prefixes(Pred, AtomPred),
     sub_prefixes(Obj, AtomObj),
+    is_subject(AtomSubj),
+    is_pred(AtomPred),
+    is_obj(AtomObj),
     assert(triple(AtomSubj, AtomPred, AtomObj)),
     handle_preds(Other, AtomSubj, Resto),
     rec_parse(Resto).
@@ -57,6 +60,9 @@ rec_parse([Line | Other]) :-
     sub_prefixes(Subj, AtomSubj),
     sub_prefixes(Pred, AtomPred),
     sub_prefixes(Stri, AtomObj),
+    is_subject(AtomSubj),
+    is_pred(AtomPred),
+    is_obj(AtomObj),
     assert(triple(AtomSubj, AtomPred, AtomObj)),
     handle_obj(Linea, AtomSubj, AtomPred),
     rec_parse(Other).
@@ -68,6 +74,9 @@ rec_parse([Line | Other]) :-
     sub_prefixes(Subj, AtomSubj),
     sub_prefixes(Pred, AtomPred),
     sub_prefixes(Obj, AtomObj),
+    is_subject(AtomSubj),
+    is_pred(AtomPred),
+    is_obj(AtomObj),
     assert(triple(AtomSubj, AtomPred, AtomObj)),
     rec_parse(Other).
 
@@ -79,6 +88,9 @@ handle_preds([E | Others], AtomSubj, Others) :-
     skip_str_split(Splitted, [Pred, Obj, "."]), !,
     sub_prefixes(Pred, AtomPred),
     sub_prefixes(Obj, AtomObj),
+    is_subject(AtomSubj),
+    is_pred(AtomPred),
+    is_obj(AtomObj),
     assert(triple(AtomSubj, AtomPred, AtomObj)).
 
 handle_preds([E | Others], AtomSubj, Altri) :-
@@ -86,6 +98,9 @@ handle_preds([E | Others], AtomSubj, Altri) :-
     skip_str_split(Splitted, [Pred, Obj, ";"]), !,
     sub_prefixes(Pred, AtomPred),
     sub_prefixes(Obj, AtomObj),
+    is_subject(AtomSubj),
+    is_pred(AtomPred),
+    is_obj(AtomObj),
     assert(triple(AtomSubj, AtomPred, AtomObj)),
     handle_preds(Others, AtomSubj, Altri).
 
@@ -96,6 +111,9 @@ handle_obj([Obj, "."], AtomSubj, AtomPred) :-
     !, string_chars(Obj, Chars),
     not(last_of(Chars, ',')),
     sub_prefixes(Obj, AtomObj),
+    is_subject(AtomSubj),
+    is_pred(AtomPred),
+    is_obj(AtomObj),
     assert(triple(AtomSubj, AtomPred, AtomObj)).
 
 handle_obj([Obj | Altri], AtomSubj, AtomPred) :-
@@ -103,6 +121,9 @@ handle_obj([Obj | Altri], AtomSubj, AtomPred) :-
     last_of(Chars, ","), !,
     sub_string(Obj, 0, _, 1, Stri),
     sub_prefixes(Stri, AtomObj),
+    is_subject(AtomSubj),
+    is_pred(AtomPred),
+    is_obj(AtomObj),
     assert(triple(AtomSubj, AtomPred, AtomObj)),
     handle_obj(Altri, AtomSubj, AtomPred).
 
@@ -153,12 +174,12 @@ destroy_triples :-
 % predicato prefixes/0 per listare tutti i prefissi presenti
 
 prefixes :-
-    listing(prefix(_, _)).
+    listing(prefix_rdf(_, _)).
 
 % predicato destroy_prefixes/0 per eliminare tutti i prefissi presenti
 
 destroy_prefixes :-
-    retract(prefix(_, _)),
+    retract(prefix_rdf(_, _)),
     fail.
 
 % predicato last_of/2, che data una lista come primo argomento ed un
@@ -216,7 +237,7 @@ skip_str_split([E | Others], LsFin) :-
 sub_prefixes(Element, NewElement) :-
     split_string(Element, ":", "", [PreStr | Other]),
     string_to_atom(PreStr, Pre),
-    prefix(Pre, Meaning), !,
+    prefix_rdf(Pre, Meaning), !,
     atom_string(Meaning, MeaningStr),
     sub_string(MeaningStr, 0, _, 1, SubMean),
     append([[SubMean], Other, [">"]], Lista),
@@ -225,3 +246,30 @@ sub_prefixes(Element, NewElement) :-
 
 sub_prefixes(Element, NewElement) :-
     atom_string(NewElement, Element).
+
+is_subject(Subj) :-
+    is_iri(Subj), !.
+
+is_subject(Subj) :-
+    is_blank(Subj), !.
+
+is_pred(Pred) :-
+    is_iri(Pred), !.
+
+is_obj(Obj) :-
+    is_iri(Obj), !.
+
+is_obj(Obj) :-
+    is_blank(Obj), !.
+
+is_obj(Obj) :-
+    atom(Obj), !.
+
+is_iri(Iri) :-
+    atom_string(Iri, Stri),
+    string_chars(Stri, ['<' | Altri]),
+    last_of(Altri, '>').
+
+is_blank(Blank) :-
+    atom_string(Blank, Stri),
+    string_chars(Stri, ['_', ':' | _]).

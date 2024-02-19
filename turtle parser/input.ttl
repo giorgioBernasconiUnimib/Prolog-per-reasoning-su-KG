@@ -1,9 +1,9 @@
 @prefix rdf: <prova/> .
 
-grammar title "RDF/XML Syntax Specification (Revised)" .
-grammar editor _:bnode .
+rdf:grammar rdf:title "RDF/XML Syntax Specification (Revised)" .
+rdf:grammar rdf:editor _:bnode .
 _:bnode rdf:name "Dave Beckett" .
-_:bnode homepage <http://purl.org/net/dajobe/> .
+_:bnode rdf:homepage <http://purl.org/net/dajobe/> .
 <http://example.org/#spiderman> <http://www.perceive.net/schemas/relationship/enemyOf> <http://example.org/#green-goblin> ;
 				<http://xmlns.com/foaf/0.1/name> "Spiderman" .
 <http://example.org/#spiderman> <http://xmlns.com/foaf/0.1/name> "Spiderman", "Uomo Ragno"@it .
