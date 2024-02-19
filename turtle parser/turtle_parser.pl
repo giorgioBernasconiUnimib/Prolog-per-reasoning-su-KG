@@ -195,7 +195,7 @@ last_of([_ | Others], E) :-
 % argomento il quale primo elemento inizia con il carattere ", raggruppa
 % tutti gli elementi fino al primo che finisce con "
 
-skip_str([], _) :- fail.
+skip_str([], _, _) :- fail.
 
 skip_str([E | Others], Str, Resto) :-
     string_chars(E, ['"' | _]), !,

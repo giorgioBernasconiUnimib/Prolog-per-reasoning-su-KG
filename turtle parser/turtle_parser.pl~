@@ -251,10 +251,10 @@ is_subject(Subj) :-
     is_iri(Subj), !.
 
 is_subject(Subj) :-
-    is_blank(Subj).
+    is_blank(Subj), !.
 
 is_pred(Pred) :-
-    is_iri(Pred).
+    is_iri(Pred), !.
 
 is_obj(Obj) :-
     is_iri(Obj), !.
@@ -263,7 +263,7 @@ is_obj(Obj) :-
     is_blank(Obj), !.
 
 is_obj(Obj) :-
-    atom(Obj).
+    atom(Obj), !.
 
 is_iri(Iri) :-
     atom_string(Iri, Stri),
