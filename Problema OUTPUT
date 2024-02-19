@@ -1,0 +1,15 @@
+Problema della duplicazione output, possibile soluzione:
+report_and_remove_inconsistencies([]).
+report_and_remove_inconsistencies([Instance-(ClassA-ClassB) | Rest]) :-
+    format('Inconsistency found: Instance ~w cannot belong to both disjoint classes ~w and ~w.\n', [Instance, ClassA, ClassB]),
+    retract(triple(Instance, rdf:type, ClassA)),
+    retract(triple(Instance, rdf:type, ClassB)),
+    skip_duplicate(Rest, ClassA, ClassB, NewRest),
+    report_and_remove_inconsistencies(NewRest).
+
+% Salta un duplicato immediato se presente
+skip_duplicate([Instance-(ClassB-ClassA) | Rest], ClassA, ClassB, Rest) :- !.
+skip_duplicate(Rest, _, _, Rest).
+
+
+DA TESTARE SE CREA PROBLEMI
