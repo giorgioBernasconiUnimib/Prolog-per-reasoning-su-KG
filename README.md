@@ -6,8 +6,8 @@ Buongiorno professori, vi ringraziamo della proposta. Abbiamo osservato la propo
 
 
 ### 1. Il progetto parte dalla lettura del dataset (di cui forniremo un esempio). Esso viene letto da un parser di turtle, che implementeremo in prolog, traducendolo in formato prolog.
-        1a. Verrà verificata la corretta formattazione (es subject with IRI or Blank node ecc…). 
-        In caso contrario il programma segnalerà un Syntax error.
+   1a. Verrà verificata la corretta formattazione (es subject with IRI or Blank node ecc…). 
+   In caso contrario il programma segnalerà un Syntax error.
 
 Analisi delle triple e successiva inferenza per distinguere classi e relazioni e proprietà.
 
