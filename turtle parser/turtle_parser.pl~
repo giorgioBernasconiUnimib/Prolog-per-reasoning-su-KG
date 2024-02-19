@@ -30,16 +30,17 @@ rec_parse(["" | Other]) :-
     !, rec_parse(Other).
 
 rec_parse([Line | Other]) :-
-    split_string(Line, " ", "", Splitted),
-    skip_str_split(Splitted, ["@prefix", Prefisso, Significato, "."]), !,
-    string_to_atom(Prefisso, PrefAtom),
+    split_string(Line, " ", "",["@prefix", Prefisso, Significato, "."]), !,
+    sub_string(Prefisso, 0, _, 1, Stri),
+    string_to_atom(Stri, PrefAtom),
     string_to_atom(Significato, MeanAtom),
     assert(prefix(PrefAtom, MeanAtom)),
     rec_parse(Other).
 
 rec_parse([Line | Other]) :-
     split_string(Line, " ", "", Splitted),
-    skip_str_split(Splitted, [Subj, Pred, Obj, ";"]), !,
+    last_of(Splitted, ";"), !,
+    skip_str_split(Splitted, [Subj, Pred, Obj, ";"]),
     string_to_atom(Subj, AtomSubj),
     string_to_atom(Pred, AtomPred),
     string_to_atom(Obj, AtomObj),
@@ -49,17 +50,21 @@ rec_parse([Line | Other]) :-
 
 rec_parse([Line | Other]) :-
     split_string(Line, " ", "", Splitted),
-    skip_str_split(Splitted, [Subj, Pred, Obj, "," | Linea]), !,
+    skip_str_split(Splitted, [Subj, Pred, Obj | Linea]),
+    string_chars(Obj, Chars),
+    last_of(Chars, ','), !,
+    sub_string(Obj, 0, _, 1, Stri),
     string_to_atom(Subj, AtomSubj),
     string_to_atom(Pred, AtomPred),
-    string_to_atom(Obj, AtomObj),
+    string_to_atom(Stri, AtomObj),
     assert(triple(AtomSubj, AtomPred, AtomObj)),
     handle_obj(Linea, AtomSubj, AtomPred),
     rec_parse(Other).
 
 rec_parse([Line | Other]) :-
     split_string(Line, " ", "", Splitted),
-    skip_str_split(Splitted, [Subj, Pred, Obj, "."]), !,
+    last_of(Splitted, "."), !,
+    skip_str_split(Splitted, [Subj, Pred, Obj, "."]),
     string_to_atom(Subj, AtomSubj),
     string_to_atom(Pred, AtomPred),
     string_to_atom(Obj, AtomObj),
@@ -88,11 +93,16 @@ handle_preds([E | Others], AtomSubj, Altri) :-
 % nel file turtle.
 
 handle_obj([Obj, "."], AtomSubj, AtomPred) :-
-    !, string_to_atom(Obj, AtomObj),
+    !, string_chars(Obj, Chars),
+    not(last_of(Chars, ',')),
+    string_to_atom(Obj, AtomObj),
     assert(triple(AtomSubj, AtomPred, AtomObj)).
 
-handle_obj([Obj, "," | Altri], AtomSubj, AtomPred) :-
-    string_to_atom(Obj, AtomObj),
+handle_obj([Obj | Altri], AtomSubj, AtomPred) :-
+    string_chars(Obj, Chars),
+    last_of(Chars, ","), !,
+    sub_string(Obj, 0, _, 1, Stri),
+    string_to_atom(Stri, AtomObj),
     assert(triple(AtomSubj, AtomPred, AtomObj)),
     handle_obj(Altri, AtomSubj, AtomPred).
 
@@ -166,15 +176,15 @@ last_of([_ | Others], E) :-
 
 skip_str([], _) :- fail.
 
-skip_str([E | Resto], [E], Resto) :-
-    string_chars(E, Els),
-    last_of(Els, '"'), !.
-
 skip_str([E | Others], Str, Resto) :-
     string_chars(E, ['"' | _]), !,
     skip_str(Others, Res, Resto),
     append([[E], Res], StrLs),
     atomics_to_string(StrLs, " ", Str).
+
+skip_str([E | Resto], [E], Resto) :-
+    string_chars(E, Els),
+    member('"', Els), !.
 
 skip_str([E | Others], Str, Resto) :-
     skip_str(Others, Res, Resto),
@@ -187,7 +197,7 @@ skip_str_split([], []).
 
 skip_str_split([E | Others], LsFin) :-
     string_chars(E, ['"' | Altri]),
-    last_of(Altri, '"'), !,
+    member('"', Altri), !,
     skip_str_split(Others, Res),
     append([[E], Res], LsFin).
 
@@ -201,3 +211,17 @@ skip_str_split([E | Others], LsFin) :-
     skip_str_split(Others, Res),
     append([[E], Res], LsFin).
 
+% predicato sub_prefixes, che sostituisce i prefissi nelle triple
+
+sub_prefixes(Element, NewElement) :-
+    split_string(Element, ":", "", [PreStr | Other]),
+    string_to_atom(PreStr, Pre),
+    prefix(Pre, Meaning), !,
+    atom_string(Meaning, MeaningStr),
+    sub_string(MeaningStr, 0, _, 1, SubMean),
+    append([[SubMean], Other, [">"]], Lista),
+    atomics_to_string(Lista, ResStr),
+    atom_string(NewElement, ResStr).
+
+sub_prefixes(Element, NewElement) :-
+    atom_string(NewElement, Element).
