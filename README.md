@@ -13,7 +13,7 @@ Progetto per "Introduzione all'intelligenza artificiale"
 ### 3. Analisi delle subclass, subproperties, domain/range, quindi utilizzo di inferenza per la derivazione delle nuove triple.
 
 
-##Per quanto riguarda l’utilizzo di OWL abbiamo strutturato alcune idee per altri punti da analizzare dopo aver finito i precedenti. 
+## Per quanto riguarda l’utilizzo di OWL abbiamo strutturato alcune idee per altri punti da analizzare dopo aver finito i precedenti. 
 
 ### 1. Gestione della relazioni sulle classi (equivalenza e disgiunzione) per il consistency Check.
 
