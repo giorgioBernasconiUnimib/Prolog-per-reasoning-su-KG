@@ -49,7 +49,10 @@ infer_subproperty_relation(S, SubP, O) :-
 apply_inferences :-
     infer_relations,
     infer_subclass_relations,
-    infer_subproperty_relations.
+    infer_subproperty_relations,
+    thing_hierarchy,
+    nothing_hierarchy,
+    topObjectProperty_hierarchy.
 
 % Stampa tutte le triple per verifica
 print_all_triples :-
@@ -61,13 +64,31 @@ start_execution :-
     print_all_triples. % Stampa tutte le triple nella base di conoscenza
 
 
+% funzione per rendere tutte le classi subclass di thing
 
+thing_hierarchy :-
+    forall(triple(S, rdf:type, owl:'Class'),
+           (\+ triple(S, rdfs:subClassOf, owl:thing) -> assert(triple(S, rdfs:subClassOf, owl:thing)))).
 
+% funzione per rendere tutte le classi superclassi di nothing
 
+nothing_hierarchy :-
+    forall(triple(S, rdf:type, owl:'Class'),
+           (\+ triple(owl:nothing, rdfs:subClassOf, S) -> assert(triple(owl:nothing, rdfs:subClassOf, S)))).
 
+% funzione per rendere tutte le proprietà subproperty di topObjectProperty
 
+topObjectProperty_hierarchy :-
+    forall(triple(S, rdf:type, owl:'ObjectProperty'),
+           (\+ triple(S, rdfs:subPropertyOf, owl:topObjectProperty) ->
+           assert(triple(S, rdfs:subPropertyOf, owl:topObjectProperty)))).
 
+triples :-
+    listing(triple(_, _, _)).
 
+destroy_triples :-
+    retract(triple(_, _, _)),
+    fail.
 
 
 
