@@ -47,6 +47,8 @@ infer_subproperty_relation(S, SubP, O) :-
 
 % Applicazione generale delle inferenze
 apply_inferences :-
+    report_loops,
+    report_property_loops,
     infer_relations,
     infer_subclass_relations,
     infer_subproperty_relations,
@@ -90,12 +92,33 @@ destroy_triples :-
     retract(triple(_, _, _)),
     fail.
 
+report_loops :-
+    findall(ClassA-ClassB,
+            (triple(ClassA, rdfs:subClassOf, ClassB),
+             triple(ClassB, rdfs:subClassOf, ClassA)),
+            Inconsistencies),
+    report_and_remove_class_inconsistencies(Inconsistencies).
 
+report_and_remove_class_inconsistencies([]).
+report_and_remove_class_inconsistencies([ClassA-ClassB | Rest]) :-
+    format('Inconsistency found: subclass loop between classes ~w and ~w.\n', [ClassA, ClassB]),
+    (triple(ClassA, rdfs:subClassOf, ClassB) -> retract(triple(ClassA, rdfs:subClassOf, ClassB)); true),
+    (triple(ClassB, rdfs:subClassOf, ClassA) -> retract(triple(ClassB, rdfs:subClassOf, ClassA)); true),
+    report_and_remove_class_inconsistencies(Rest).
 
+report_property_loops :-
+    findall(PropA-PropB,
+            (triple(PropA, rdfs:subPropertyOf, PropB),
+             triple(PropB, rdfs:subPropertyOf, PropA)),
+            Inconsistencies),
+    report_and_remove_prop_inconsistencies(Inconsistencies).
 
-
-
-
+report_and_remove_prop_inconsistencies([]).
+report_and_remove_prop_inconsistencies([PropA-PropB | Rest]) :-
+    format('Inconsistency found: subproperty loop between properties ~w and ~w.\n', [PropA, PropB]),
+    (triple(PropA, rdfs:subPropertyOf, PropB) -> retract(triple(PropA, rdfs:subPropertyOf, PropB)); true),
+    (triple(PropB, rdfs:subPropertyOf, PropA) -> retract(triple(PropB, rdfs:subPropertyOf, PropA)); true),
+    report_and_remove_prop_inconsistencies(Rest).
 
 
 
@@ -124,6 +147,7 @@ triple(person, rdf:type, owl:'Class').
 triple(person, rdfs:subClassOf, creature).
 triple(employee, rdf:type, owl:'Class').
 triple(employee, rdfs:subClassOf, person).
+triple(person, rdfs:subClassOf, employee).
 
 % Proprietà
 triple(hasPet, rdf:type, owl:'ObjectProperty').
@@ -136,6 +160,7 @@ triple(worksFor, rdfs:range, company).
 % Sotto Proprietà
 triple(manages, rdf:type, owl:'ObjectProperty').
 triple(manages, rdfs:subPropertyOf, worksFor).
+triple(worksFor, rdfs:subPropertyOf, manages).
 triple(manages, rdfs:domain, manager).
 triple(manages, rdfs:range, company).
 
