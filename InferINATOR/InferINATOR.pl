@@ -6,66 +6,66 @@ triple(rdfs:subClassOf, rdfs:range, owl:class).
 triple(rdfs:subClassOf, rdfs:domain, owl:class).
 
 
-% Verifica se un'entità è una classe
+% Verifica se un'entitÃ  Ã¨ una classe
 is_class(Entity) :-
     triple(Entity, rdf:type, owl:class).
 
-% Verifica se una classe è una sottoclasse
+% Verifica se una classe Ã¨ una sottoclasse
 is_subClass(SubClass,Class) :-
     triple(SubClass, rdfs:subClassOf, Class).
 
-% Verifica se un'entità è una proprietà
+% Verifica se un'entitÃ  Ã¨ una proprietÃ 
 is_property(Entity) :-
     triple(Entity, rdf:type, owl:'ObjectProperty').
 
-% Assicura la bidirezionalità di una equivalenza tra classi
+% Assicura la bidirezionalitÃ  di una equivalenza tra classi
 infer_equivalent_bidirectional(ClassA, ClassB) :-
     ( \+ triple(ClassB, owl:equivalentClass, ClassA) -> assert(triple(ClassB, owl:equivalentClass, ClassA)),
       format("Asserted bidirectional equivalence: ~w owl:equivalentClass ~w.\n", [ClassB, ClassA])
     ; true).
 
-% Assicura la bidirezionalità di una disgiunzione tra classi
+% Assicura la bidirezionalitÃ  di una disgiunzione tra classi
 infer_disjoint_bidirectional(ClassA, ClassB) :-
     ( \+ triple(ClassB, owl:disjointWith, ClassA) -> assert(triple(ClassB, owl:disjointWith, ClassA)),
       format("Asserted bidirectional disjointness: ~w owl:disjointWith ~w.\n", [ClassB, ClassA])
     ; true).
 
-% Chiamata per assicurare la bidirezionalità delle relazioni tra classi
+% Chiamata per assicurare la bidirezionalitÃ  delle relazioni tra classi
 infer_bidirectional_relations :-
     forall(triple(ClassA, owl:equivalentClass, ClassB), infer_equivalent_bidirectional(ClassA, ClassB)),
     forall(triple(ClassA, owl:disjointWith, ClassB), infer_disjoint_bidirectional(ClassA, ClassB)).
 
-% Assicura la bidirezionalità di una equivalenza (sameAs) tra individui
+% Assicura la bidirezionalitÃ  di una equivalenza (sameAs) tra individui
 infer_sameAs_bidirectional(IndividualA, IndividualB) :-
     ( \+ triple(IndividualB, owl:sameAs, IndividualA) ->
         assert(triple(IndividualB, owl:sameAs, IndividualA)),
         format("Asserted bidirectional sameAs: ~w owl:sameAs ~w.\n", [IndividualB, IndividualA])
     ; true).
 
-% Assicura la bidirezionalità di una disgiunzione (differentFrom) tra individui
+% Assicura la bidirezionalitÃ  di una disgiunzione (differentFrom) tra individui
 infer_differentFrom_bidirectional(IndividualA, IndividualB) :-
     ( \+ triple(IndividualB, owl:differentFrom, IndividualA) ->
         assert(triple(IndividualB, owl:differentFrom, IndividualA)),
         format("Asserted bidirectional differentFrom: ~w owl:differentFrom ~w.\n", [IndividualB, IndividualA])
     ; true).
 
-% Chiamata per assicurare la bidirezionalità delle relazioni tra individui
+% Chiamata per assicurare la bidirezionalitÃ  delle relazioni tra individui
 infer_individual_bidirectional_relations :-
     forall(triple(IndividualA, owl:sameAs, IndividualB), infer_sameAs_bidirectional(IndividualA, IndividualB)),
     forall(triple(IndividualA, owl:differentFrom, IndividualB), infer_differentFrom_bidirectional(IndividualA, IndividualB)).
 
-% Aggiunge transitività alla disgiunzione tra classi
+% Aggiunge transitivitÃ  alla disgiunzione tra classi
 infer_transitive_subClass :-
     forall((triple(ClassA, owl:equivalentClass, ClassB), is_subClass(ClassA,ClassC)),
            ( \+ triple(ClassB, rdfs:subClassOf, ClassC) -> assert(triple(ClassB, rdfs:subClassOf, ClassC)),
              format("Inferred and asserted subClassOf: ~w rdfs:subClassOf ~w.\n", [ClassB, ClassC])
            ; true)).
 
-% Assicura che le triple rispettino le restrizioni di domain e range per le proprietà
+% Assicura che le triple rispettino le restrizioni di domain e range per le proprietÃ 
 apply_domain_and_range_restrictions :-
     forall((triple(S, P, O), is_property(P)), apply_domain_and_range_restrictions(S, P, O)).
 
-% Applica le restrizioni di domain e range per una data proprietà
+% Applica le restrizioni di domain e range per una data proprietÃ 
 apply_domain_and_range_restrictions(S, P, O) :-
     % Gestione del domain
     (   triple(P, rdfs:domain, Domain),
@@ -87,7 +87,7 @@ infer_subclass_relation(Entity, SubClass) :-
     is_subClass(SubClass,Class),
     (   \+ triple(Entity, rdf:type, Class) -> assert(triple(Entity, rdf:type, Class))).
 
-% Inferenza basata sulle sotto proprietà
+% Inferenza basata sulle sotto proprietÃ 
 infer_subproperty_relations :-
     findall(_, (triple(S, SubP, O), infer_subproperty_relation(S, SubP, O)), _).
 
@@ -104,7 +104,7 @@ infer_equivalent_classes :-
                 forall(triple(Instance, rdf:type, ClassB),
                        ( \+ triple(Instance, rdf:type, ClassA) -> assert(triple(Instance, rdf:type, ClassA)) ; true)))).
 
-% Aggiunge transitività alla disgiunzione tra classi
+% Aggiunge transitivitÃ  alla disgiunzione tra classi
 infer_transitive_disjointness :-
     forall((triple(ClassA, owl:equivalentClass, ClassB), triple(ClassA, owl:disjointWith, ClassC)),
            ( \+ triple(ClassB, owl:disjointWith, ClassC) -> assert(triple(ClassB, owl:disjointWith, ClassC)),
@@ -184,20 +184,9 @@ triple(bird, owl:disjointWith, cat).
 % Istanze
 triple(tweety, rdf:type, canary).
 triple(sylvester, rdf:type, cat).
-% triple(tweety, rdf:type, bird). Questa triple è coerente con
-% l'equivalenza ma non è presente perche sono scemo e l'avrei dovuta
+% triple(tweety, rdf:type, bird). Questa triple Ã¨ coerente con
+% l'equivalenza ma non Ã¨ presente perche sono scemo e l'avrei dovuta
 % mettere
 triple(felix, rdf:type, bird).
 triple(felix, rdf:type, canary).
 triple(felix, rdf:type, cat). % Questa triple crea un'inconsistenza con la disgiunzione
-
-
-
-
-
-
-
-
-
-
-
