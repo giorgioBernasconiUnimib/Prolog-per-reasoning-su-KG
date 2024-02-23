@@ -262,14 +262,20 @@ sub_prefixes(Element, NewElement) :-
 sub_prefixes(Element, NewElement) :-
     atom_string(NewElement, Element), !.
 
+% predicato per controllare se un elemento Ë un soggetto turtle
+
 is_subject(Subj) :-
     is_iri(Subj), !.
 
 is_subject(Subj) :-
     is_blank(Subj), !.
 
+% predicato per controllare se un elemento Ë un predicato turtle
+
 is_pred(Pred) :-
     is_iri(Pred), !.
+
+% predicato per controllare se un elemento Ë un oggetto turtle
 
 is_obj(Obj) :-
     is_iri(Obj), !.
@@ -280,14 +286,20 @@ is_obj(Obj) :-
 is_obj(Obj) :-
     atom(Obj), !.
 
+% predicato per controllare se un elemento Ë un iri
+
 is_iri(Iri) :-
     atom_string(Iri, Stri),
     string_chars(Stri, ['<' | Altri]),
     last_of(Altri, '>'), !.
 
+% predicato per controllare se un elemento Ë un blank node
+
 is_blank(Blank) :-
     atom_string(Blank, Stri),
     string_chars(Stri, ['_', ':' | _]), !.
+
+% predicato per sostituire ad 'a' rdf:type
 
 control_pred('a', '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>') :- !.
 
@@ -296,13 +308,16 @@ control_pred(X, X) :- !.
 
 % ---------------------------reasoner--------------------------
 
+% implementazione del reasoner che, data una base di conoscenza
+% (standard come quella presente in coda al file, oppure caricata con
+% read_file), effettua inferenze rdfs e owl per ricavare nuove triple
 
 
-% Verifica se una classe √® una sottoclasse
+% Verifica se una classe Ë una sottoclasse
 is_subClass(SubClass,Class) :-
     triple(SubClass, '<http://www.w3.org/2000/01/rdf-schema#subClassOf>', Class).
 
-% Verifica se un'entit√† √® una propriet√†
+% Verifica se un'entit‡ Ë una propriet‡†
 is_property(Entity) :-
     triple(Entity, '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', '<http://www.w3.org/2002/07/owl#ObjectProperty>').
 
@@ -316,7 +331,7 @@ infer_class_membership :-
             assert(triple(Y, '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', '<http://www.w3.org/2000/01/rdf-schema#Class>')),
                 format("Inferred and asserted that ~w is a class.\n", [Y]); true))).
 
-% Inferisce il tipo del soggetto basato sul rdfs:domain della propriet√†
+% Inferisce il tipo del soggetto basato sul rdfs:domain della propriet‡†
 infer_property_domain :-
     forall((triple(S, P, _), is_property(P), triple(P, '<http://www.w3.org/2000/01/rdf-schema#domain>', C)),
            ((not(triple(S, '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', C)) ->
@@ -326,47 +341,47 @@ infer_property_domain :-
            )).
 
 
-% Assicura la bidirezionalit√† di una equivalenza tra classi
+% Assicura la bidirezionalit‡† di una equivalenza tra classi
 infer_equivalent_bidirectional(ClassA, ClassB) :-
     (not(triple(ClassB, '<http://www.w3.org/2002/07/owl#equivalentClass>', ClassA)) ->
     assert(triple(ClassB, '<http://www.w3.org/2002/07/owl#equivalentClass>', ClassA)),
       format("Asserted bidirectional equivalence: ~w owl:equivalentClass ~w.\n", [ClassB, ClassA])
     ; true).
 
-% Assicura la bidirezionalit√† di una disgiunzione tra classi
+% Assicura la bidirezionalit‡† di una disgiunzione tra classi
 infer_disjoint_bidirectional(ClassA, ClassB) :-
     (not(triple(ClassB, '<http://www.w3.org/2002/07/owl#disjointWith>', ClassA)) ->
     assert(triple(ClassB, '<http://www.w3.org/2002/07/owl#disjointWith>', ClassA)),
       format("Asserted bidirectional disjointness: ~w owl:disjointWith ~w.\n", [ClassB, ClassA])
     ; true).
 
-% Chiamata per assicurare la bidirezionalit√† delle relazioni tra classi
+% Chiamata per assicurare la bidirezionalit‡† delle relazioni tra classi
 infer_bidirectional_relations :-
     forall(triple(ClassA, '<http://www.w3.org/2002/07/owl#equivalentClass>', ClassB), infer_equivalent_bidirectional(ClassA, ClassB)),
     forall(triple(ClassA, '<http://www.w3.org/2002/07/owl#disjointWith>', ClassB), infer_disjoint_bidirectional(ClassA, ClassB)).
 
-% Assicura la bidirezionalit√† di una equivalenza (sameAs) tra individui
+% Assicura la bidirezionalit‡† di una equivalenza (sameAs) tra individui
 infer_sameAs_bidirectional(IndividualA, IndividualB) :-
     (not(triple(IndividualB, '<http://www.w3.org/2002/07/owl#sameAs>', IndividualA)) ->
         assert(triple(IndividualB, '<http://www.w3.org/2002/07/owl#sameAs>', IndividualA)),
         format("Asserted bidirectional sameAs: ~w owl:sameAs ~w.\n", [IndividualB, IndividualA])
     ; true).
 
-% Assicura la bidirezionalit√† di una disgiunzione (differentFrom) tra individui
+% Assicura la bidirezionalit‡† di una disgiunzione (differentFrom) tra individui
 infer_differentFrom_bidirectional(IndividualA, IndividualB) :-
     (not(triple(IndividualB, '<http://www.w3.org/2002/07/owl#differentFrom>', IndividualA)) ->
         assert(triple(IndividualB, '<http://www.w3.org/2002/07/owl#differentFrom>', IndividualA)),
         format("Asserted bidirectional differentFrom: ~w owl:differentFrom ~w.\n", [IndividualB, IndividualA])
     ; true).
 
-% Chiamata per assicurare la bidirezionalit√† delle relazioni tra individui
+% Chiamata per assicurare la bidirezionalit‡ delle relazioni tra individui
 infer_individual_bidirectional_relations :-
     forall(triple(IndividualA, '<http://www.w3.org/2002/07/owl#sameAs>', IndividualB),
            infer_sameAs_bidirectional(IndividualA, IndividualB)),
     forall(triple(IndividualA, '<http://www.w3.org/2002/07/owl#differentFrom>', IndividualB),
            infer_differentFrom_bidirectional(IndividualA, IndividualB)).
 
-% Aggiunge transitivit√† alla disgiunzione tra classi
+% Aggiunge transitivit‡ alla disgiunzione tra classi
 infer_transitive_subClass :-
     forall((triple(ClassA, '<http://www.w3.org/2002/07/owl#equivalentClass>', ClassB), is_subClass(ClassA,ClassC)),
            (not(triple(ClassB, '<http://www.w3.org/2000/01/rdf-schema#subClassOf>', ClassC)) ->
@@ -374,11 +389,11 @@ infer_transitive_subClass :-
              format("Inferred and asserted subClassOf: ~w rdfs:subClassOf ~w.\n", [ClassB, ClassC])
            ; true)).
 
-% Assicura che le triple rispettino le restrizioni di domain e range per le propriet√†
+% Assicura che le triple rispettino le restrizioni di domain e range per le propriet‡†
 apply_domain_and_range_restrictions :-
     forall((triple(S, P, O), is_property(P)), apply_domain_and_range_restrictions(S, P, O)).
 
-% Applica le restrizioni di domain e range per una data propriet√†
+% Applica le restrizioni di domain e range per una data propriet‡†
 apply_domain_and_range_restrictions(S, P, O) :-
     % Gestione del domain
     (   triple(P, '<http://www.w3.org/2000/01/rdf-schema#domain>', Domain),
@@ -486,6 +501,7 @@ infer_disjoint_individuals :-
 % uguali al contempo, rimuovendole dalle triple attualmente
 % in considerazione e segnalando il problema
 report_and_remove_different_inconsistencies_on_individual([]).
+
 report_and_remove_different_inconsistencies_on_individual([(IndividualA, IndividualB) | Rest]) :-
     format('Inconsistency found: Individuals ~w and ~w cannot be declared as both different and the same.\n', [IndividualA, IndividualB]),
     (triple(IndividualA, '<http://www.w3.org/2002/07/owl#differentFrom>', IndividualB) ->
@@ -498,18 +514,26 @@ report_and_remove_different_inconsistencies_on_individual([(IndividualA, Individ
     retract(triple(IndividualB, '<http://www.w3.org/2002/07/owl#sameAs>', IndividualA)); true),
     report_and_remove_different_inconsistencies_on_individual(Rest).
 
+% per applicare la propriet‡ di simmetria alle propriet‡ che la hanno
+
 infer_symmetric_property :-
     forall(triple(P, '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', '<http://www.w3.org/2002/07/owl#SymmetricProperty>'),
            (forall(triple(A, P, B), (not(triple(B, P, A)) -> assert(triple(B, P, A)) ; true)))).
+
+% per inferire relazioni inverse
 
 infer_inverse_property :-
     forall(triple(P, '<http://www.w3.org/2002/07/owl#inverseOf>', Q),
            (forall(triple(A, P, B), (not(triple(B, Q, A)) -> assert(triple(B, Q, A)) ; true)))).
 
+% per applicare la propriet‡ di transitivit‡ alle propriet‡ che la hanno
+
 infer_transitive_property :-
     forall(triple(P, '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', '<http://www.w3.org/2002/07/owl#TransitiveProperty>'),
            (forall(triple(A, P, B),
                    (forall(triple(B, P, C), (not(triple(A, P, C)) -> assert(triple(A, P, C)) ; true)))))).
+
+% per applicare la propriet‡ di funzionalit‡ alle propriet‡ che la hanno
 
 infer_functional_property :-
     forall(triple(P, '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', '<http://www.w3.org/2002/07/owl#FunctionalProperty>'),
@@ -517,6 +541,7 @@ infer_functional_property :-
                    (forall(triple(X, P, C), ((not(triple(B, '<http://www.w3.org/2002/07/owl#sameAs>', C)), not(B == C), A == X) ->
                                             assert(triple(B, '<http://www.w3.org/2002/07/owl#sameAs>', C)) ; true)))))).
 
+% per inferire gli assiomi delle propriet‡
 
 infer_property_axioms :-
     infer_symmetric_property,
@@ -573,6 +598,8 @@ topObjectProperty_hierarchy :-
            (\+ triple(S, '<http://www.w3.org/2000/01/rdf-schema#subPropertyOf>', '<http://www.w3.org/2002/07/owl#TopObjectProperty>') ->
            assert(triple(S, '<http://www.w3.org/2000/01/rdf-schema#subPropertyOf>', '<http://www.w3.org/2002/07/owl#TopObjectProperty>')))).
 
+% funzioni per controllare che non ci siano loop nelle subClass
+
 report_loops :-
     findall(ClassA-ClassB,
             (triple(ClassA, '<http://www.w3.org/2000/01/rdf-schema#subClassOf>', ClassB),
@@ -588,6 +615,8 @@ report_and_remove_class_inconsistencies([ClassA-ClassB | Rest]) :-
     (triple(ClassB, '<http://www.w3.org/2000/01/rdf-schema#subClassOf>', ClassA) ->
     retract(triple(ClassB, '<http://www.w3.org/2000/01/rdf-schema#subClassOf>', ClassA)); true),
     report_and_remove_class_inconsistencies(Rest).
+
+% funzioni per controllare che non ci siano loop nelle subProperties
 
 report_property_loops :-
     findall(PropA-PropB,
@@ -622,6 +651,8 @@ add_prefixes(Element, Element).
 start_execution :-
     apply_inferences,
     print_all_triples.
+
+% funzione select per effettuare query
 
 select(Subj, Pred, Obj) :-
     var(Subj),
