@@ -1,0 +1,25 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+
+<Person> rdf:type owl:Class .
+<Animal> rdf:type owl:Class .
+<Mammal> rdf:type owl:Class .
+<Dog> rdf:type owl:Class .
+
+<Mammal> rdfs:subClassOf <Animal> .
+<Dog> rdfs:subClassOf <Mammal> .
+
+<hasPet> rdf:type owl:ObjectProperty .
+<hasOwner> rdf:type owl:ObjectProperty .
+
+<hasPet> rdfs:domain <Person> .
+<hasPet> rdfs:range <Animal> .
+<hasOwner> rdfs:domain <Animal> .
+<hasOwner> rdfs:range <Person> .
+
+<John> rdf:type <Person> .
+<Fido> rdf:type <Dog> .
+
+<John> <hasPet> <Fido> .
+<Fido> <hasOwner> <John> .
