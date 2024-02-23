@@ -44,6 +44,5 @@ Note
 #### 1. le triple devono essere nella forma Subj Pred Obj .
 #### 2. i commenti devono iniziare all'inizio della riga, con un #
 #### 3. se si hanno più predicati per uno stesso soggetto, separarli con ; nella forma Subj Pred1 Obj1 ;
-####                                                                                        Pred2 Obj2 .
-#### (Si noti che nella nuova riga si devono usare '\t')
+#### Pred2 Obj2 . (Si noti che nella nuova riga si possono usare solo '\t')
 #### 4. se si hanno più oggetti, separarli tramite una ',' nella forma Subj Pred Obj1, Obj2 .
