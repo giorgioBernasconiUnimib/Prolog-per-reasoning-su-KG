@@ -39,9 +39,11 @@ rec_parse([Comment | Other]) :-
 rec_parse([Line | Other]) :-
     split_string(Line, " ", "",["@prefix", Prefisso, Significato, "."]), !,
     sub_string(Prefisso, 0, _, 1, Stri),
+    sub_string(Significato, 0, _, 1, Sign),
+    atom_string(Significato, Meaning),
     string_to_atom(Stri, PrefAtom),
-    string_to_atom(Significato, MeanAtom),
-    is_iri(MeanAtom),
+    string_to_atom(Sign, MeanAtom),
+    is_iri(Meaning),
     assert(prefix_rdf(PrefAtom, MeanAtom)),
     rec_parse(Other).
 
@@ -99,20 +101,22 @@ handle_preds([E | Others], AtomSubj, Others) :-
     skip_str_split(Splitted, [Pred, Obj, "."]), !,
     sub_prefixes(Pred, AtomPred),
     sub_prefixes(Obj, AtomObj),
+    control_pred(AtomPred, NewPred),
     is_subject(AtomSubj),
-    is_pred(AtomPred),
+    is_pred(NewPred),
     is_obj(AtomObj),
-    assert(triple(AtomSubj, AtomPred, AtomObj)).
+    assert(triple(AtomSubj, NewPred, AtomObj)).
 
 handle_preds([E | Others], AtomSubj, Altri) :-
     split_string(E, " ", "\t", Splitted),
     skip_str_split(Splitted, [Pred, Obj, ";"]), !,
     sub_prefixes(Pred, AtomPred),
     sub_prefixes(Obj, AtomObj),
+    control_pred(AtomPred, NewPred),
     is_subject(AtomSubj),
-    is_pred(AtomPred),
+    is_pred(NewPred),
     is_obj(AtomObj),
-    assert(triple(AtomSubj, AtomPred, AtomObj)),
+    assert(triple(AtomSubj, NewPred, AtomObj)),
     handle_preds(Others, AtomSubj, Altri).
 
 % predicato handle_obj/3, che si occupa di gestire le ,
@@ -144,11 +148,12 @@ handle_obj([Obj | Altri], AtomSubj, AtomPred) :-
 % il file path Ë assoluto o relativo
 
 read_file(Name, abs) :-
-    open(Name, read, File, []),
-    read_file_to_string(File, Str, []),
+    reset,
+    read_file_to_string(Name, Str, []),
     parse_ttl(Str).
 
 read_file(Name, rel) :-
+    reset,
     absolute_file_name(Name, Abs, []),
     read_file_to_string(Abs, Str, []),
     parse_ttl(Str).
@@ -159,7 +164,6 @@ read_file(Name, rel) :-
 % del parser.
 
 read_file :-
-    reset,
     read_file('input.ttl', rel).
 
 % predicati read_abs_file/1 e read_rel_file/1, che permettono
@@ -251,13 +255,14 @@ sub_prefixes(Element, NewElement) :-
     string_to_atom(PreStr, Pre),
     prefix_rdf(Pre, Meaning), !,
     atom_string(Meaning, MeaningStr),
-    sub_string(MeaningStr, 0, _, 1, SubMean),
-    append([[SubMean], Other, [">"]], Lista),
+    append([[MeaningStr], Other, [">"]], Lista),
     atomics_to_string(Lista, ResStr),
     atom_string(NewElement, ResStr).
 
 sub_prefixes(Element, NewElement) :-
-    atom_string(NewElement, Element).
+    atom_string(NewElement, Element), !.
+
+% predicato per controllare se un elemento Ë un soggetto turtle
 
 is_subject(Subj) :-
     is_iri(Subj), !.
@@ -265,8 +270,12 @@ is_subject(Subj) :-
 is_subject(Subj) :-
     is_blank(Subj), !.
 
+% predicato per controllare se un elemento Ë un predicato turtle
+
 is_pred(Pred) :-
     is_iri(Pred), !.
+
+% predicato per controllare se un elemento Ë un oggetto turtle
 
 is_obj(Obj) :-
     is_iri(Obj), !.
@@ -277,35 +286,38 @@ is_obj(Obj) :-
 is_obj(Obj) :-
     atom(Obj), !.
 
+% predicato per controllare se un elemento Ë un iri
+
 is_iri(Iri) :-
     atom_string(Iri, Stri),
     string_chars(Stri, ['<' | Altri]),
-    last_of(Altri, '>').
+    last_of(Altri, '>'), !.
+
+% predicato per controllare se un elemento Ë un blank node
 
 is_blank(Blank) :-
     atom_string(Blank, Stri),
-    string_chars(Stri, ['_', ':' | _]).
+    string_chars(Stri, ['_', ':' | _]), !.
+
+% predicato per sostituire ad 'a' rdf:type
 
 control_pred('a', '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>') :- !.
 
-control_pred(X, X).
+control_pred(X, X) :- !.
 
 
 % ---------------------------reasoner--------------------------
 
+% implementazione del reasoner che, data una base di conoscenza
+% (standard come quella presente in coda al file, oppure caricata con
+% read_file), effettua inferenze rdfs e owl per ricavare nuove triple
 
-:- dynamic triple/3.
 
-
-% Verifica se un'entit√† √® una classe
-is_class(Entity) :-
-    triple(Entity, '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', '<http://www.w3.org/2000/01/rdf-schema#Class>').
-
-% Verifica se una classe √® una sottoclasse
+% Verifica se una classe Ë una sottoclasse
 is_subClass(SubClass,Class) :-
     triple(SubClass, '<http://www.w3.org/2000/01/rdf-schema#subClassOf>', Class).
 
-% Verifica se un'entit√† √® una propriet√†
+% Verifica se un'entit‡ Ë una propriet‡†
 is_property(Entity) :-
     triple(Entity, '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', '<http://www.w3.org/2002/07/owl#ObjectProperty>').
 
@@ -319,7 +331,7 @@ infer_class_membership :-
             assert(triple(Y, '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', '<http://www.w3.org/2000/01/rdf-schema#Class>')),
                 format("Inferred and asserted that ~w is a class.\n", [Y]); true))).
 
-% Inferisce il tipo del soggetto basato sul rdfs:domain della propriet√†
+% Inferisce il tipo del soggetto basato sul rdfs:domain della propriet‡†
 infer_property_domain :-
     forall((triple(S, P, _), is_property(P), triple(P, '<http://www.w3.org/2000/01/rdf-schema#domain>', C)),
            ((not(triple(S, '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', C)) ->
@@ -329,47 +341,47 @@ infer_property_domain :-
            )).
 
 
-% Assicura la bidirezionalit√† di una equivalenza tra classi
+% Assicura la bidirezionalit‡† di una equivalenza tra classi
 infer_equivalent_bidirectional(ClassA, ClassB) :-
     (not(triple(ClassB, '<http://www.w3.org/2002/07/owl#equivalentClass>', ClassA)) ->
     assert(triple(ClassB, '<http://www.w3.org/2002/07/owl#equivalentClass>', ClassA)),
       format("Asserted bidirectional equivalence: ~w owl:equivalentClass ~w.\n", [ClassB, ClassA])
     ; true).
 
-% Assicura la bidirezionalit√† di una disgiunzione tra classi
+% Assicura la bidirezionalit‡† di una disgiunzione tra classi
 infer_disjoint_bidirectional(ClassA, ClassB) :-
     (not(triple(ClassB, '<http://www.w3.org/2002/07/owl#disjointWith>', ClassA)) ->
     assert(triple(ClassB, '<http://www.w3.org/2002/07/owl#disjointWith>', ClassA)),
       format("Asserted bidirectional disjointness: ~w owl:disjointWith ~w.\n", [ClassB, ClassA])
     ; true).
 
-% Chiamata per assicurare la bidirezionalit√† delle relazioni tra classi
+% Chiamata per assicurare la bidirezionalit‡† delle relazioni tra classi
 infer_bidirectional_relations :-
     forall(triple(ClassA, '<http://www.w3.org/2002/07/owl#equivalentClass>', ClassB), infer_equivalent_bidirectional(ClassA, ClassB)),
     forall(triple(ClassA, '<http://www.w3.org/2002/07/owl#disjointWith>', ClassB), infer_disjoint_bidirectional(ClassA, ClassB)).
 
-% Assicura la bidirezionalit√† di una equivalenza (sameAs) tra individui
+% Assicura la bidirezionalit‡† di una equivalenza (sameAs) tra individui
 infer_sameAs_bidirectional(IndividualA, IndividualB) :-
     (not(triple(IndividualB, '<http://www.w3.org/2002/07/owl#sameAs>', IndividualA)) ->
         assert(triple(IndividualB, '<http://www.w3.org/2002/07/owl#sameAs>', IndividualA)),
         format("Asserted bidirectional sameAs: ~w owl:sameAs ~w.\n", [IndividualB, IndividualA])
     ; true).
 
-% Assicura la bidirezionalit√† di una disgiunzione (differentFrom) tra individui
+% Assicura la bidirezionalit‡† di una disgiunzione (differentFrom) tra individui
 infer_differentFrom_bidirectional(IndividualA, IndividualB) :-
     (not(triple(IndividualB, '<http://www.w3.org/2002/07/owl#differentFrom>', IndividualA)) ->
         assert(triple(IndividualB, '<http://www.w3.org/2002/07/owl#differentFrom>', IndividualA)),
         format("Asserted bidirectional differentFrom: ~w owl:differentFrom ~w.\n", [IndividualB, IndividualA])
     ; true).
 
-% Chiamata per assicurare la bidirezionalit√† delle relazioni tra individui
+% Chiamata per assicurare la bidirezionalit‡ delle relazioni tra individui
 infer_individual_bidirectional_relations :-
     forall(triple(IndividualA, '<http://www.w3.org/2002/07/owl#sameAs>', IndividualB),
            infer_sameAs_bidirectional(IndividualA, IndividualB)),
     forall(triple(IndividualA, '<http://www.w3.org/2002/07/owl#differentFrom>', IndividualB),
            infer_differentFrom_bidirectional(IndividualA, IndividualB)).
 
-% Aggiunge transitivit√† alla disgiunzione tra classi
+% Aggiunge transitivit‡ alla disgiunzione tra classi
 infer_transitive_subClass :-
     forall((triple(ClassA, '<http://www.w3.org/2002/07/owl#equivalentClass>', ClassB), is_subClass(ClassA,ClassC)),
            (not(triple(ClassB, '<http://www.w3.org/2000/01/rdf-schema#subClassOf>', ClassC)) ->
@@ -377,11 +389,11 @@ infer_transitive_subClass :-
              format("Inferred and asserted subClassOf: ~w rdfs:subClassOf ~w.\n", [ClassB, ClassC])
            ; true)).
 
-% Assicura che le triple rispettino le restrizioni di domain e range per le propriet√†
+% Assicura che le triple rispettino le restrizioni di domain e range per le propriet‡†
 apply_domain_and_range_restrictions :-
     forall((triple(S, P, O), is_property(P)), apply_domain_and_range_restrictions(S, P, O)).
 
-% Applica le restrizioni di domain e range per una data propriet√†
+% Applica le restrizioni di domain e range per una data propriet‡†
 apply_domain_and_range_restrictions(S, P, O) :-
     % Gestione del domain
     (   triple(P, '<http://www.w3.org/2000/01/rdf-schema#domain>', Domain),
@@ -478,7 +490,7 @@ infer_same_as_relations :-
 
 % Individua le coppie di individui che, per via della loro disuguaglianza dichiarata,
 % causano una inconsistenza
-infer_disjoint_individuals_on_individual :-
+infer_disjoint_individuals :-
     findall((IndividualA, IndividualB),
             (triple(IndividualA, '<http://www.w3.org/2002/07/owl#differentFrom>', IndividualB),
              triple(IndividualA, '<http://www.w3.org/2002/07/owl#sameAs>', IndividualB)),
@@ -489,6 +501,7 @@ infer_disjoint_individuals_on_individual :-
 % uguali al contempo, rimuovendole dalle triple attualmente
 % in considerazione e segnalando il problema
 report_and_remove_different_inconsistencies_on_individual([]).
+
 report_and_remove_different_inconsistencies_on_individual([(IndividualA, IndividualB) | Rest]) :-
     format('Inconsistency found: Individuals ~w and ~w cannot be declared as both different and the same.\n', [IndividualA, IndividualB]),
     (triple(IndividualA, '<http://www.w3.org/2002/07/owl#differentFrom>', IndividualB) ->
@@ -501,37 +514,40 @@ report_and_remove_different_inconsistencies_on_individual([(IndividualA, Individ
     retract(triple(IndividualB, '<http://www.w3.org/2002/07/owl#sameAs>', IndividualA)); true),
     report_and_remove_different_inconsistencies_on_individual(Rest).
 
+% per applicare la propriet‡ di simmetria alle propriet‡ che la hanno
+
 infer_symmetric_property :-
     forall(triple(P, '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', '<http://www.w3.org/2002/07/owl#SymmetricProperty>'),
            (forall(triple(A, P, B), (not(triple(B, P, A)) -> assert(triple(B, P, A)) ; true)))).
 
+% per inferire relazioni inverse
+
 infer_inverse_property :-
     forall(triple(P, '<http://www.w3.org/2002/07/owl#inverseOf>', Q),
            (forall(triple(A, P, B), (not(triple(B, Q, A)) -> assert(triple(B, Q, A)) ; true)))).
+
+% per applicare la propriet‡ di transitivit‡ alle propriet‡ che la hanno
 
 infer_transitive_property :-
     forall(triple(P, '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', '<http://www.w3.org/2002/07/owl#TransitiveProperty>'),
            (forall(triple(A, P, B),
                    (forall(triple(B, P, C), (not(triple(A, P, C)) -> assert(triple(A, P, C)) ; true)))))).
 
+% per applicare la propriet‡ di funzionalit‡ alle propriet‡ che la hanno
+
 infer_functional_property :-
     forall(triple(P, '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', '<http://www.w3.org/2002/07/owl#FunctionalProperty>'),
            (forall(triple(A, P, B),
-                   (forall(triple(A, P, C), (not(triple(B, '<http://www.w3.org/2002/07/owl#sameAs>', C)) ->
+                   (forall(triple(X, P, C), ((not(triple(B, '<http://www.w3.org/2002/07/owl#sameAs>', C)), not(B == C), A == X) ->
                                             assert(triple(B, '<http://www.w3.org/2002/07/owl#sameAs>', C)) ; true)))))).
 
-infer_inverse_functional_property :-
-    forall(triple(P, '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', '<http://www.w3.org/2002/07/owl#InverseFunctionalProperty>'),
-           (forall(triple(B, P, A),
-                   (forall(triple(C, P, A), (not(triple(B, '<http://www.w3.org/2002/07/owl#sameAs>', C)) ->
-                                            assert(triple(B, '<http://www.w3.org/2002/07/owl#sameAs>', C)) ; true)))))).
+% per inferire gli assiomi delle propriet‡
 
 infer_property_axioms :-
     infer_symmetric_property,
     infer_inverse_property,
     infer_transitive_property,
-    infer_functional_property,
-    infer_inverse_functional_property.
+    infer_functional_property.
 
 % Applicazione delle nuove inferenze
 apply_inferences :-
@@ -547,7 +563,7 @@ apply_inferences :-
     infer_equivalent_classes,
     infer_transitive_subClass,
     infer_same_as_relations,
-    infer_disjoint_individuals_on_individual,
+    infer_disjoint_individuals,
     thing_hierarchy,
     nothing_hierarchy,
     topObjectProperty_hierarchy,
@@ -556,7 +572,10 @@ apply_inferences :-
 
 % Stampa tutte le triple, sia quelle del dataset sia quelle inferite
 print_all_triples :-
-    forall(triple(S, P, O), format("~w ~w ~w.\n", [S, P, O])).
+    forall(triple(S, P, O), (add_prefixes(S, Sr),
+                             add_prefixes(P, Pr),
+                             add_prefixes(O, Or),
+                             format("~w ~w ~w.\n", [Sr, Pr, Or]))).
 
 % funzione per rendere tutte le classi subclass di thing
 
@@ -579,6 +598,8 @@ topObjectProperty_hierarchy :-
            (\+ triple(S, '<http://www.w3.org/2000/01/rdf-schema#subPropertyOf>', '<http://www.w3.org/2002/07/owl#TopObjectProperty>') ->
            assert(triple(S, '<http://www.w3.org/2000/01/rdf-schema#subPropertyOf>', '<http://www.w3.org/2002/07/owl#TopObjectProperty>')))).
 
+% funzioni per controllare che non ci siano loop nelle subClass
+
 report_loops :-
     findall(ClassA-ClassB,
             (triple(ClassA, '<http://www.w3.org/2000/01/rdf-schema#subClassOf>', ClassB),
@@ -594,6 +615,8 @@ report_and_remove_class_inconsistencies([ClassA-ClassB | Rest]) :-
     (triple(ClassB, '<http://www.w3.org/2000/01/rdf-schema#subClassOf>', ClassA) ->
     retract(triple(ClassB, '<http://www.w3.org/2000/01/rdf-schema#subClassOf>', ClassA)); true),
     report_and_remove_class_inconsistencies(Rest).
+
+% funzioni per controllare che non ci siano loop nelle subProperties
 
 report_property_loops :-
     findall(PropA-PropB,
@@ -611,11 +634,119 @@ report_and_remove_prop_inconsistencies([PropA-PropB | Rest]) :-
     retract(triple(PropB, '<http://www.w3.org/2000/01/rdf-schema#subPropertyOf>', PropA)); true),
     report_and_remove_prop_inconsistencies(Rest).
 
+% predicato add_prefixes, che converte gli URI estesi nei loro corrispettivi prefissati
+
+add_prefixes(ExtendedElement, PrefixedElement) :-
+    prefix_rdf(Prefix, UriStart),
+    atom_string(UriStart, UriStartStr),
+    sub_string(ExtendedElement, 0, _, _, UriStartStr), !,
+    string_length(UriStartStr, UriStartLen),
+    sub_atom(ExtendedElement, UriStartLen, _, 1, Suffix),
+    atom_concat(Prefix, ':', PrefixColon),
+    atom_concat(PrefixColon, Suffix, PrefixedElement).
+
+add_prefixes(Element, Element).
 
 % Avvia l'esecuzione delle inferenze e stampa le triple risultanti
 start_execution :-
     apply_inferences,
     print_all_triples.
+
+% funzione select per effettuare query
+
+select(Subj, Pred, Obj) :-
+    var(Subj),
+    var(Pred),
+    var(Obj), !,
+    print_all_triples.
+
+select(Subj, Pred, Obj) :-
+    not(var(Subj)),
+    var(Pred),
+    var(Obj), !,
+    atom_string(Subj, StrSubj),
+    sub_prefixes(StrSubj, SubSubj),
+    forall(triple(SubSubj, P, O), (add_prefixes(SubSubj, Sr),
+                             add_prefixes(P, Pr),
+                             add_prefixes(O, Or),
+                             format("~w ~w ~w.\n", [Sr, Pr, Or]))).
+
+select(Subj, Pred, Obj) :-
+    var(Subj),
+    not(var(Pred)),
+    var(Obj), !,
+    control_pred(Pred, Pred1),
+    atom_string(Pred1, StrPred),
+    sub_prefixes(StrPred, SubPred),
+    forall(triple(S, SubPred, O), (add_prefixes(S, Sr),
+                             add_prefixes(SubPred, Pr),
+                             add_prefixes(O, Or),
+                             format("~w ~w ~w.\n", [Sr, Pr, Or]))).
+
+select(Subj, Pred, Obj) :-
+    var(Subj),
+    var(Pred),
+    not(var(Obj)), !,
+    atom_string(Obj, StrObj),
+    sub_prefixes(StrObj, SubObj),
+    forall(triple(S, P, SubObj), (add_prefixes(S, Sr),
+                             add_prefixes(P, Pr),
+                             add_prefixes(SubObj, Or),
+                             format("~w ~w ~w.\n", [Sr, Pr, Or]))).
+
+select(Subj, Pred, Obj) :-
+    not(var(Subj)),
+    not(var(Pred)),
+    var(Obj), !,
+    control_pred(Pred, Pred1),
+    atom_string(Pred1, StrPred),
+    atom_string(Subj, StrSubj),
+    sub_prefixes(StrSubj, SubSubj),
+    sub_prefixes(StrPred, SubPred),
+    forall(triple(SubSubj, SubPred, O), (add_prefixes(SubSubj, Sr),
+                             add_prefixes(SubPred, Pr),
+                             add_prefixes(O, Or),
+                             format("~w ~w ~w.\n", [Sr, Pr, Or]))).
+
+select(Subj, Pred, Obj) :-
+    var(Subj),
+    not(var(Pred)),
+    not(var(Obj)), !,
+    control_pred(Pred, Pred1),
+    atom_string(Pred1, StrPred),
+    sub_prefixes(StrPred, SubPred),
+    atom_string(Obj, StrObj),
+    sub_prefixes(StrObj, SubObj),
+    forall(triple(S, SubPred, SubObj), (add_prefixes(S, Sr),
+                             add_prefixes(SubPred, Pr),
+                             add_prefixes(SubObj, Or),
+                             format("~w ~w ~w.\n", [Sr, Pr, Or]))).
+
+select(Subj, Pred, Obj) :-
+    not(var(Subj)),
+    var(Pred),
+    not(var(Obj)), !,
+    atom_string(Subj, StrSubj),
+    sub_prefixes(StrSubj, SubSubj),
+    atom_string(Obj, StrObj),
+    sub_prefixes(StrObj, SubObj),
+    forall(triple(SubSubj, P, SubObj), (add_prefixes(SubSubj, Sr),
+                             add_prefixes(P, Pr),
+                             add_prefixes(SubObj, Or),
+                             format("~w ~w ~w.\n", [Sr, Pr, Or]))).
+
+select(Subj, Pred, Obj) :-
+    not(var(Subj)),
+    not(var(Pred)),
+    not(var(Obj)), !,
+    control_pred(Pred, Pred1),
+    atom_string(Pred1, StrPred),
+    atom_string(Subj, StrSubj),
+    sub_prefixes(StrSubj, SubSubj),
+    sub_prefixes(StrPred, SubPred),
+    atom_string(Obj, StrObj),
+    sub_prefixes(StrObj, SubObj),
+    triple(SubSubj, SubPred, SubObj).
 
 % elimina tutte le triple e re-asserta quelle fondamentali
 
@@ -631,8 +762,7 @@ reset :-
     assert(triple('<http://www.w3.org/2000/01/rdf-schema#subClassOf>', '<http://www.w3.org/2000/01/rdf-schema#domain>', '<http://www.w3.org/2000/01/rdf-schema#Class>')),
     assert(triple('<http://www.w3.org/2000/01/rdf-schema#subPropertyOf>', '<http://www.w3.org/2000/01/rdf-schema#range>', '<http://www.w3.org/2002/07/owl#ObjectProperty>')),
     assert(triple('<http://www.w3.org/2000/01/rdf-schema#subPropertyOf>', '<http://www.w3.org/2000/01/rdf-schema#domain>', '<http://www.w3.org/2002/07/owl#ObjectProperty>')),
-    assert(triple('<http://www.w3.org/2000/01/rdf-schema#Class>', '<http://www.w3.org/2002/07/owl#sameAs>', '<http://www.w3.org/2002/07/owl#Class>')),
-    assert(prefix_rdf('', '<>')).
+    assert(triple('<http://www.w3.org/2000/01/rdf-schema#Class>', '<http://www.w3.org/2002/07/owl#sameAs>', '<http://www.w3.org/2002/07/owl#Class>')), !.
 
 
 % ---------------------------esempio di dataset-----------------------
@@ -667,5 +797,4 @@ triple('<http://www.w3.org/2000/01/rdf-schema#subClassOf>', '<http://www.w3.org/
 triple('<http://www.w3.org/2000/01/rdf-schema#subClassOf>', '<http://www.w3.org/2000/01/rdf-schema#domain>', '<http://www.w3.org/2000/01/rdf-schema#Class>').
 triple('<http://www.w3.org/2000/01/rdf-schema#subPropertyOf>', '<http://www.w3.org/2000/01/rdf-schema#range>', '<http://www.w3.org/2002/07/owl#ObjectProperty>').
 triple('<http://www.w3.org/2000/01/rdf-schema#subPropertyOf>', '<http://www.w3.org/2000/01/rdf-schema#domain>', '<http://www.w3.org/2002/07/owl#ObjectProperty>').
-triple('<http://www.w3.org/2000/01/rdf-schema#Class>', '<http://www.w3.org/2002/07/owl#sameAs>', '<http://www.w3.org/2002/07/owl#Class>').
-prefix_rdf('', '<>').
+triple('<http://www.w3.org/2000/01/rdf-schema#Class>', '<http://www.w3.org/2002/07/owl#equivalentClass>', '<http://www.w3.org/2002/07/owl#Class>').

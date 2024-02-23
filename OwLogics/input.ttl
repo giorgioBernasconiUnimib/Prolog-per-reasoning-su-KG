@@ -1,25 +1,46 @@
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix ex: <http://example.org/> .
 
-<Person> rdf:type owl:Class .
-<Animal> rdf:type owl:Class .
-<Mammal> rdf:type owl:Class .
-<Dog> rdf:type owl:Class .
+ex:Person rdf:type rdfs:Class .
+ex:hasFriend rdf:type rdf:Property .
+ex:hasSibling rdf:type rdf:Property .
+ex:hasParent rdf:type rdf:Property .
+ex:name rdf:type owl:DatatypeProperty .
 
-<Mammal> rdfs:subClassOf <Animal> .
-<Dog> rdfs:subClassOf <Mammal> .
+# Proprietà simmetrica
+ex:hasFriend rdf:type owl:SymmetricProperty .
 
-<hasPet> rdf:type owl:ObjectProperty .
-<hasOwner> rdf:type owl:ObjectProperty .
+# Proprietà transitiva
+ex:hasParent rdf:type owl:TransitiveProperty .
 
-<hasPet> rdfs:domain <Person> .
-<hasPet> rdfs:range <Animal> .
-<hasOwner> rdfs:domain <Animal> .
-<hasOwner> rdfs:range <Person> .
+# Proprietà inversa
+ex:hasSibling rdf:type owl:SymmetricProperty .
+ex:hasSibling owl:inverseOf ex:hasSiblingInverse .
 
-<John> rdf:type <Person> .
-<Fido> rdf:type <Dog> .
+# Proprietà funzionale
+ex:name rdf:type owl:FunctionalProperty .
 
-<John> <hasPet> <Fido> .
-<Fido> <hasOwner> <John> .
+# Proprietà funzionale inversa
+ex:hasParent rdf:type owl:InverseFunctionalProperty .
+
+# Individui
+ex:John rdf:type ex:Person .
+ex:Jane rdf:type ex:Person .
+ex:Bob rdf:type ex:Person .
+ex:Alice rdf:type ex:Person .
+
+# Assegnazione di proprietà
+ex:John ex:hasFriend ex:Jane .
+ex:Jane ex:hasFriend ex:John .
+
+ex:John ex:hasParent ex:Bob .
+ex:Bob ex:hasParent ex:Alice .
+
+ex:John ex:hasSibling ex:Jane .
+ex:Jane ex:hasSiblingInverse ex:John .
+ex:Jane ex:hasSibling ex:Bob .
+ex:Bob ex:hasSiblingInverse ex:Jane .
+
+ex:John ex:name "John" .
