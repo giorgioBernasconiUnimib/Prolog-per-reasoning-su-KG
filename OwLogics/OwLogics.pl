@@ -444,6 +444,19 @@ infer_equivalent_classes :-
                        assert(triple(Instance, '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', ClassA)) ;
                        true)))).
 
+% Gestione dell'equivalenza tra properties
+infer_equivalent_properties :-
+    forall(triple(PropA, '<http://www.w3.org/2002/07/owl#equivalentProperty>', PropB),
+                (forall(triple(Instance, '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', PropA),
+                       (not(triple(Instance, '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', PropB)) ->
+                       assert(triple(Instance, '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', PropB)) ;
+                       true)),
+                forall(triple(Instance, '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', PropB),
+                       (not(triple(Instance, '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', PropA)) ->
+                       assert(triple(Instance, '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>', PropA)) ;
+                       true)))).
+
+
 % Aggiunge transitività alla disgiunzione tra classi
 infer_transitive_disjointness :-
     forall((triple(ClassA, '<http://www.w3.org/2002/07/owl#equivalentClass>', ClassB),
@@ -556,7 +569,8 @@ infer_property_axioms :-
 % Applicazione delle nuove inferenze
 apply_inferences :-
     infer_class_membership,
-    infer_property_domain,    infer_property_axioms,
+    infer_property_domain,
+    infer_property_axioms,
     infer_bidirectional_relations,
     infer_individual_bidirectional_relations,
     apply_domain_and_range_restrictions,
@@ -565,6 +579,7 @@ apply_inferences :-
     (infer_transitive_disjointness,infer_bidirectional_relations),
     infer_disjoint_classes,
     infer_equivalent_classes,
+    infer_equivalent_properties,
     infer_transitive_subClass,
     infer_same_as_relations,
     infer_disjoint_individuals,
@@ -766,7 +781,8 @@ reset :-
     assert(triple('<http://www.w3.org/2000/01/rdf-schema#subClassOf>', '<http://www.w3.org/2000/01/rdf-schema#domain>', '<http://www.w3.org/2000/01/rdf-schema#Class>')),
     assert(triple('<http://www.w3.org/2000/01/rdf-schema#subPropertyOf>', '<http://www.w3.org/2000/01/rdf-schema#range>', '<http://www.w3.org/2002/07/owl#ObjectProperty>')),
     assert(triple('<http://www.w3.org/2000/01/rdf-schema#subPropertyOf>', '<http://www.w3.org/2000/01/rdf-schema#domain>', '<http://www.w3.org/2002/07/owl#ObjectProperty>')),
-    assert(triple('<http://www.w3.org/2000/01/rdf-schema#Class>', '<http://www.w3.org/2002/07/owl#sameAs>', '<http://www.w3.org/2002/07/owl#Class>')), !.
+    assert(triple('<http://www.w3.org/2000/01/rdf-schema#Class>', '<http://www.w3.org/2002/07/owl#sameAs>', '<http://www.w3.org/2002/07/owl#Class>')),
+    assert(triple('<http://www.w3.org/2002/07/owl#ObjectProperty>', '<http://www.w3.org/2002/07/owl#equivalentProperty>', '<http://www.w3.org/2000/01/rdf-schema#Property>')), !.
 
 
 % ---------------------------esempio di dataset-----------------------
@@ -807,3 +823,4 @@ triple('<http://www.w3.org/2000/01/rdf-schema#subClassOf>', '<http://www.w3.org/
 triple('<http://www.w3.org/2000/01/rdf-schema#subPropertyOf>', '<http://www.w3.org/2000/01/rdf-schema#range>', '<http://www.w3.org/2002/07/owl#ObjectProperty>').
 triple('<http://www.w3.org/2000/01/rdf-schema#subPropertyOf>', '<http://www.w3.org/2000/01/rdf-schema#domain>', '<http://www.w3.org/2002/07/owl#ObjectProperty>').
 triple('<http://www.w3.org/2000/01/rdf-schema#Class>', '<http://www.w3.org/2002/07/owl#equivalentClass>', '<http://www.w3.org/2002/07/owl#Class>').
+triple('<http://www.w3.org/2002/07/owl#ObjectProperty>', '<http://www.w3.org/2002/07/owl#equivalentProperty>', '<http://www.w3.org/2000/01/rdf-schema#Property>').

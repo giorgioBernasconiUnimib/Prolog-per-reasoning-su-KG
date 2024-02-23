@@ -1,3 +1,7 @@
+% Bernasconi Giorgio 885948
+% Farioli Alessio 879217
+
+
 % --------------------------turtle parser--------------------------
 
 
@@ -762,7 +766,8 @@ reset :-
     assert(triple('<http://www.w3.org/2000/01/rdf-schema#subClassOf>', '<http://www.w3.org/2000/01/rdf-schema#domain>', '<http://www.w3.org/2000/01/rdf-schema#Class>')),
     assert(triple('<http://www.w3.org/2000/01/rdf-schema#subPropertyOf>', '<http://www.w3.org/2000/01/rdf-schema#range>', '<http://www.w3.org/2002/07/owl#ObjectProperty>')),
     assert(triple('<http://www.w3.org/2000/01/rdf-schema#subPropertyOf>', '<http://www.w3.org/2000/01/rdf-schema#domain>', '<http://www.w3.org/2002/07/owl#ObjectProperty>')),
-    assert(triple('<http://www.w3.org/2000/01/rdf-schema#Class>', '<http://www.w3.org/2002/07/owl#sameAs>', '<http://www.w3.org/2002/07/owl#Class>')), !.
+    assert(triple('<http://www.w3.org/2000/01/rdf-schema#Class>', '<http://www.w3.org/2002/07/owl#sameAs>', '<http://www.w3.org/2002/07/owl#Class>')),
+    assert(triple('<http://www.w3.org/2002/07/owl#ObjectProperty>', '<http://www.w3.org/2002/07/owl#equivalentProperty>', '<http://www.w3.org/2000/01/rdf-schema#Property>')), !.
 
 
 % ---------------------------esempio di dataset-----------------------
@@ -803,3 +808,4 @@ triple('<http://www.w3.org/2000/01/rdf-schema#subClassOf>', '<http://www.w3.org/
 triple('<http://www.w3.org/2000/01/rdf-schema#subPropertyOf>', '<http://www.w3.org/2000/01/rdf-schema#range>', '<http://www.w3.org/2002/07/owl#ObjectProperty>').
 triple('<http://www.w3.org/2000/01/rdf-schema#subPropertyOf>', '<http://www.w3.org/2000/01/rdf-schema#domain>', '<http://www.w3.org/2002/07/owl#ObjectProperty>').
 triple('<http://www.w3.org/2000/01/rdf-schema#Class>', '<http://www.w3.org/2002/07/owl#equivalentClass>', '<http://www.w3.org/2002/07/owl#Class>').
+triple('<http://www.w3.org/2002/07/owl#ObjectProperty>', '<http://www.w3.org/2002/07/owl#equivalentProperty>', '<http://www.w3.org/2000/01/rdf-schema#Property>').
