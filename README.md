@@ -1,9 +1,12 @@
 Progetto per "Introduzione all'intelligenza artificiale"
 =======
 
+Presentazione
+======
+#### link: https://www.canva.com/design/DAF9mQ7MTfU/vF7dNCPgb2LUn0cdBb0PVA/edit?utm_content=DAF9mQ7MTfU&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton 
 
-
-
+Traccia
+======
 
 ### 1. Il progetto parte dalla lettura del dataset (di cui forniremo un esempio). Esso viene letto da un parser di turtle, che implementeremo in prolog, traducendolo in formato prolog.
 1. Verrà verificata la corretta formattazione (es subject with IRI or Blank node ecc…). In caso contrario il programma segnalerà un Syntax error.
