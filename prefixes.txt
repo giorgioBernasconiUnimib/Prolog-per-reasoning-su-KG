@@ -13,8 +13,10 @@
 <http://www.w3.org/2002/07/owl#disjointWith> owl:disjointWith
 <http://www.w3.org/2002/07/owl#ObjectProperty> owl:ObjectProperty
 <http://www.w3.org/2002/07/owl#Class> owl:Class
-'<http://www.w3.org/2002/07/owl#SymmetricProperty>' owl:SymmetricProperty
-'<http://www.w3.org/2002/07/owl#TransitiveProperty>' owl:TransitiveProperty
-'<http://www.w3.org/2002/07/owl#inverseOf>' owl:inverseOf
+<http://www.w3.org/2002/07/owl#SymmetricProperty> owl:SymmetricProperty
+<http://www.w3.org/2002/07/owl#TransitiveProperty> owl:TransitiveProperty
+<http://www.w3.org/2002/07/owl#inverseOf> owl:inverseOf
 <http://www.w3.org/2002/07/owl#FunctionalProperty> owl:FunctionalProperty
 <http://www.w3.org/2002/07/owl#InverseFunctionalProperty> owl:InverseFunctionalProperty
+<http://www.w3.org/2002/07/owl#equivalentProperty> owl:equivalentProperty
+<http://www.w3.org/2000/01/rdf-schema#Property> rdfs:Property
