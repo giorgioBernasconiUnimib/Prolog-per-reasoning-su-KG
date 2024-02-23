@@ -40,7 +40,7 @@ Per far avviare il file
 Note
 ======
 
-### Si noti che nel caso si desse il filename assoluto, sarà necessario cambiare i '\' nel path con '/'
+### Si noti che nel caso si desse il filename assoluto, sarà necessario cambiare i '\\' nel path con '/'
 
 ### Nel file turtle, sarà necessario seguire le seguenti regole
 
