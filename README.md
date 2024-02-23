@@ -27,6 +27,6 @@ Progetto per "Introduzione all'intelligenza artificiale"
 
 ### 1. aprire il file OwLogics.pl
 ### 2. se si vuole ispezionare il dataset di esempio persente nel programma, scrivere il comando start_execution., altrimenti
-### 1. utilizzare read_file., read_abs_file(Filename). oppure read_rel_file(Filename) per leggere il file (nel caso di read_file sarà letto il file input.ttl presente)
-### 2. utilizzare start_execution. per effettuare inferenze.
+ 1. utilizzare read_file., read_abs_file(Filename). oppure read_rel_file(Filename) per leggere il file (nel caso di read_file sarà letto il file input.ttl presente)
+ 2. utilizzare start_execution. per effettuare inferenze.
 ### 3. se si vuole, utilizzare select(Subj, Pred, Obj). per effettuare query.
