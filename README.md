@@ -26,7 +26,7 @@ Progetto per "Introduzione all'intelligenza artificiale"
 Per far avviare il file
 ======
 
-### 1. Aprire il file OwLogics.pl
+### 1. Aprire il file OwLogics.pl nella cartella OwLogics
 
 ### 2. Se si vuole ispezionare il dataset di esempio persente nel programma, scrivere il comando start_execution., altrimenti
  1. utilizzare read_file., read_abs_file(Filename). oppure read_rel_file(Filename) per leggere il file (nel caso di read_file sarà letto il file input.ttl presente)
