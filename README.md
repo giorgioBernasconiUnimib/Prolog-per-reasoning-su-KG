@@ -23,10 +23,27 @@ Progetto per "Introduzione all'intelligenza artificiale"
 
 ### 4. Gestione della gerarchia di classi e proprietà.
 
-# Per far avviare il file
+Per far avviare il file
+======
 
-### 1. aprire il file OwLogics.pl
-### 2. se si vuole ispezionare il dataset di esempio persente nel programma, scrivere il comando start_execution., altrimenti
+### 1. Aprire il file OwLogics.pl
+
+### 2. Se si vuole ispezionare il dataset di esempio persente nel programma, scrivere il comando start_execution., altrimenti
  1. utilizzare read_file., read_abs_file(Filename). oppure read_rel_file(Filename) per leggere il file (nel caso di read_file sarà letto il file input.ttl presente)
  2. utilizzare start_execution. per effettuare inferenze.
-### 3. se si vuole, utilizzare select(Subj, Pred, Obj). per effettuare query.
+
+### 3. Se si vuole, utilizzare select(Subj, Pred, Obj). per effettuare query.
+
+Note
+======
+
+### Si noti che nel caso si desse il filename assoluto, sarà necessario cambiare i '\' nel path con '/'
+
+### Nel file turtle, sarà necessario seguire le seguenti regole
+
+#### 1. le triple devono essere nella forma Subj Pred Obj .
+#### 2. i commenti devono iniziare all'inizio della riga, con un #
+#### 3. se si hanno più predicati per uno stesso soggetto, separarli con ; nella forma Subj Pred1 Obj1 ;
+####                                                                                        Pred2 Obj2 .
+#### (Si noti che nella nuova riga si devono usare '\t')
+#### 4. se si hanno più oggetti, separarli tramite una ',' nella forma Subj Pred Obj1, Obj2 .
